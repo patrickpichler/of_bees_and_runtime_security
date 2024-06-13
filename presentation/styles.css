@@ -1,0 +1,165 @@
+:root {
+  --slidev-code-font-size: 1.1em !important;
+  --slidev-code-line-height: 1.3em !important;
+}
+
+.code-small-font {
+  --slidev-code-font-size: 0.9em !important;
+  --slidev-code-line-height: 1.1em !important;
+}
+
+.code-extra-small-font {
+  --slidev-code-font-size: 0.7em !important;
+  --slidev-code-line-height: 1em !important;
+}
+
+.code-medium-font {
+  --slidev-code-font-size: 1em !important;
+  --slidev-code-line-height: 1.2em !important;
+}
+
+.highlighted-listing {
+  color: darkgray;
+}
+
+.highlighted-listing .current {
+  font-weight: 800;
+  color: black;
+}
+
+.highlighted-listing .not-shown {
+  color: black;
+  visibility: hidden;
+}
+
+.full-center {
+  height: 100%;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+}
+
+.full-center>* {
+  flex-grow: 1;
+}
+
+.stack {
+  position: relative;
+}
+
+.stack>* {
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.invert-colors {
+  background-color: black;
+  color: darkgray;
+}
+
+.invert-colors .highlighted-listing .current {
+  font-weight: 800;
+  color: white !important;
+}
+
+.red-danger {
+  color: #d20f39;
+}
+
+.white-black-shadow {
+  color: white;
+  text-shadow: 2px 1px black;
+}
+
+.black {
+  color: black;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.big-fat {
+  font-size: 4em;
+}
+
+.fancy-headline {
+  font-size: 4em;
+  font-weight: bolder;
+  font-family: "Georgia", sans-serif;
+}
+
+.fancy-headline-small {
+  font-size: 3em;
+  font-weight: bolder;
+  font-family: "Georgia", sans-serif;
+}
+
+.inactive {
+  color: #585b70;
+}
+
+.attribution {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  color: black;
+  padding-right: 10px;
+  font-size: 10px;
+}
+
+.text-content p,
+.level-1 {
+  font-size: 1.5em;
+  line-height: 1.8em;
+}
+
+.text-content .level-2 {
+  font-size: 0.8em;
+  line-height: 1.0em;
+  padding-left: 50px;
+}
+
+.full-center .mermaid {
+  display: flex;
+  justify-content: center;
+}
+
+.fancy-table>table>thead {
+  background-color: #009879;
+  color: #ffffff;
+  text-align: left;
+}
+
+.fancy-table>table {
+  border-collapse: collapse;
+  margin: 25px 0;
+  font-size: 0.9em;
+  font-family: sans-serif;
+  min-width: 400px;
+  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+}
+
+.items > ul > li {
+  font-size: xx-large;
+  line-height: 2.5em;
+}
+
+.fact {
+  font-size: xxx-large;
+}
+
+.highlighted-element {
+  font-weight: bolder;
+  text-decoration: underline;
+}
+
+.filepath {
+  color: gray;
+}

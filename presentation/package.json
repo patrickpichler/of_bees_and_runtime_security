@@ -1,0 +1,22 @@
+{
+  "name": "of-bees-and-runtime-security",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "build": "slidev build",
+    "dev": "slidev --open",
+    "export": "slidev export"
+  },
+  "dependencies": {
+    "@iconify-json/mdi": "^1.1.67",
+    "@iconify-json/devicon": "^1.1.15",
+    "@iconify-json/noto": "^1.1.12",
+    "@slidev/cli": "^0.49.11",
+    "@slidev/theme-apple-basic": "^0.25.1",
+    "@slidev/theme-default": "^0.25.0",
+    "slidev-addon-excalidraw": "^1.0.3"
+  },
+  "devDependencies": {
+    "playwright-chromium": "^1.43.0"
+  }
+}

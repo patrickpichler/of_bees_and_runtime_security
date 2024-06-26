@@ -133,7 +133,9 @@ backgroundSize: 40%
 
 <div style="display: flex; align-items: end; height: 100%; justify-content: center">
 <span style="color: black; font-size: 2em;">
+<a href="https://isovalent.com/blog/post/ebpf-documentary-creation-story/">
 eBPF’s Creation Story – Unlocking The Kernel
+</a>
 </span>
 </div>
 
@@ -257,7 +259,9 @@ backgroundSize: 40%
 
 <div style="display: flex; align-items: end; height: 100%; justify-content: center">
 <span style="color: black; font-size: 2em;">
+<a href="https://docs.kernel.org/bpf/standardization/instruction-set.html">
 BPF Instruction Set Architecture Docs
+</a>
 </span>
 </div>
 
@@ -1153,7 +1157,9 @@ backgroundSize: 40%
 
 <div style="display: flex; align-items: end; height: 100%; justify-content: center">
 <span style="color: black; font-size: 2em;">
-<a href="https://www.kernel.org/doc/html/latest/bpf/verifier.html">eBPF verifier documentation</a>
+<a href="https://www.kernel.org/doc/html/latest/bpf/verifier.html">
+eBPF verifier documentation
+</a>
 </span>
 </div>
 
@@ -1913,7 +1919,9 @@ backgroundSize: 40%
 
 <div style="display: flex; align-items: end; height: 100%; justify-content: center">
 <span style="color: black; font-size: 2em;">
+<a href="https://castai.teamtailor.com/jobs/4480547-senior-software-engineer-security-product-team">
 Senior Software Engineer - Security Product Team
+</a>
 </span>
 </div>
 

@@ -75,9 +75,14 @@ layout: section
 <div class="items">
 
 * Merged with Linux 3.18 (2014)
+
+<v-clicks>
+
 * Alexei Strarovoitov (creator)
 * Original use-case software defined networking
 * Now serves many other use-cases
+
+</v-clicks>
 
 </div>
 
@@ -187,6 +192,9 @@ backgroundSize: 70%
 layout: section
 ---
 
+<v-switch>
+<template #0>
+
 <div class="items">
 
 * HashTable, Arrays
@@ -194,11 +202,11 @@ layout: section
 * Perf and Ring Buffer
 * TailCall maps
 
-</div>
 
----
-layout: section
----
+</div>
+</template>
+
+<template #1>
 
 <div class="items highlighted-listing">
 
@@ -210,6 +218,10 @@ layout: section
 </ul>
 
 </div>
+
+</template>
+
+</v-switch>
 
 ---
 layout: fact
@@ -268,9 +280,14 @@ layout: section
 <div class="items">
 
 * Marked location in the kernel
+
+<v-clicks>
+
 * Not specific to eBPF
 * Considered kernel API (stable)
 * 1400+ Tracepoints defined (Linux 5.15)
+
+</v-clicks>
 
 </div>
 
@@ -317,7 +334,12 @@ layout: section
 <div class="items">
 
 * Can hook <span class="highlighted-element">any</span> kernel function
+
+<v-clicks>
+
 * No stability guarantee (kernel functions can change)
+
+</v-clicks>
 
 </div>
 
@@ -334,7 +356,12 @@ layout: section
 <div class="items">
 
 * Linux Security Modules
+
+<v-clicks>
+
 * Return value controls how kernel behaves
+
+</v-clicks>
 
 </div>
 
@@ -351,7 +378,12 @@ layout: section
 <div class="items">
 
 * EXpress Data Path
+
+<v-clicks>
+
 * Used to filter packets (controlled by return value)
+
+</v-clicks>
 
 </div>
 
@@ -432,8 +464,13 @@ layout: section
 <div class="items">
 
 * Read arbitrary data from kernel memory
+
+<v-clicks>
+
 * You are responsible for what you read
 * More stable alternative: CO-RE
+
+</v-clicks>
 
 </div>
 
@@ -450,7 +487,12 @@ layout: section
 <div class="items">
 
 * Read data from an eBPF map
+
+<v-clicks>
+
 * <mdi-warning class="text-red-400"/> Pointer to memory region is returned
+
+</v-clicks>
 
 </div>
 
@@ -488,10 +530,15 @@ layout: section
 <div class="items">
 
 * Return pointer to `task_struct`
+
+<v-clicks>
+
 * Contains data such as:
     * Current Namespaces
     * PID/TGID
     * Opened Files
+
+</v-clicks>
 
 </div>
 
@@ -730,8 +777,13 @@ layout: section
 <div class="items">
 
 * Turn ByteCode into DAG
+
+<v-clicks>
+
 * Check for unbounded loops
 * Check for dead code
+
+</v-clicks>
 
 </div>
 
@@ -748,8 +800,13 @@ layout: section
 <div class="items">
 
 * Descend all possible paths
+
+<v-clicks>
+
 * Simulate execution
 * Verify state changes
+
+</v-clicks>
 
 </div>
 
@@ -814,8 +871,13 @@ layout: section
 <div class="items">
 
 * Central component of Facebook's network infrastructure
+
+<v-clicks>
+
 * Makes heavy use of XDP
 * Relatively low CPU impact
+
+</v-clicks>
 
 </div>
 
@@ -832,10 +894,15 @@ layout: section
 <div class="items">
 
 * CNI plugin for Kubernets Clusters
+
+<v-clicks>
+
 * Full blown network observability/security solution
 * Uses XDP for all sorts of things
     * Network Policies
     * kube-proxy replacement
+
+</v-clicks>
 
 </div>
 
@@ -852,7 +919,12 @@ layout: section
 <div class="items">
 
 * Mostly Tracing
+
+<v-clicks>
+
 * LSM for blocking syscalls
+
+</v-clicks>
 
 </div>
 
@@ -869,8 +941,13 @@ layout: section
 <div class="items">
 
 * Allows you to hook kernel functions/tracepoints
+
+<v-clicks>
+
 * Kill processes on custom written policies
 * Signal is send in process
+
+</v-clicks>
 
 </div>
 
@@ -965,8 +1042,13 @@ layout: section
 <div class="items">
 
 * Stands for Index Node
+
+<v-clicks>
+
 * Used in FS
 * Unique Identifier + Metadata
+
+</v-clicks>
 
 </div>
 
@@ -1041,7 +1123,12 @@ layout: section
 <div class="items">
 
 * `ovl_inode` has `__upperdentry != NULL`
+
+<v-clicks>
+
 * `__upperdentry->d_fsdata` has `OVL__UPPER_ALIAS` set
+
+</v-clicks>
 
 </div>
 
@@ -1250,12 +1337,17 @@ layout: section
 <div class="items">
 
 * eBPF is like JS for the kernel
+
+<v-clicks>
+
 * Wide array of use-cases
     * Monitoring (tracepoints)
     * Networking (XDP)
     * Security (LSM)
 * More exiting things on the horizon
     * E.g. sched-ext
+
+</v-clicks>
 
 </div>
 

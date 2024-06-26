@@ -1907,12 +1907,6 @@ backgroundSize: contain
 
 ---
 layout: image
-image: /blog-meme.png
-backgroundSize: 50%
----
-
----
-layout: image
 image: /cast-hiring.svg
 backgroundSize: 40%
 ---

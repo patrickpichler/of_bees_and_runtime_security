@@ -13,27 +13,29 @@ With this out of the way, who of you has heard about eBPF before? Has anyone of 
 eBPF?
 
 Nice! Now, the main goal of this talk is to give you a good idea, why eBPF is considered this next
-level technology and what makes it so powerful. To achieve this, we are going to dive into how eBPF
-is implemented on kernel level. Armed with the knowledge how it works, we are going to look at two
-real world Kubernetes security products, to figure out how they leverage eBPF.
+level technology and what makes it so powerful. To achieve this, we are going to dive deep into the
+low level details of eBPF and figure out how it is actually working. We are also going to checkout
+how it is used in today's Cloud native landscape.
 
 <!-- show https://ebpf.io/static/e293240ecccb9d506587571007c36739/f2674/overview.png -->
 
-For those of you who do not know eBPF, it can be thought of as JavaScript for the Linux kernel.
-Sounds strange, but is incredibly useful. Before eBPF it was incredibly hard to extend the Linux
-kernel. eBPF changed this, by offering a secure way. We are going to learn about the exact details
-a bit later. This power is used today in a lot of different tools and products across various use
-cases and all of this in a secure way. Sounds not only amazing, but it is amazing. As you can see in
-the overview, there are quite a few components on various layers involved. To give you a better feel
-about eBPF, we are going to have a closer look at the lower levels.
+For those of you who do not know eBPF, it can be compared to what JavaScript is for the Browser,
+but for the Linux kernel. Sounds strange, but is incredibly useful. Before eBPF it was incredibly
+hard to extend the Linux kernel. eBPF changed this, by offering a secure way of doing exactly this.
+We are going to learn about the exact details a bit later. This power is used today in a lot of
+different tools and products across various use cases. Sounds not only amazing, but it is amazing.
+As you can see in the overview, there are quite a few components on various layers involved. To give
+you a better feel about eBPF, we are going to have a closer look at the lower levels.
 
 <!-- History of eBPF -->
 
-I will not turn this into a length history lesson, so all I am going to tell you is, that eBPF was
-introduced into kernel version 3.18 back in 2014, after a lot of hard work of its original creator
-Alexei Strarovoitov. Even though it original it was an abbreviation for `extended Berkley Package
-Filters`, it nowadays has little to do with `Berkley Package Filters` and should be thought of as
-its own term. The original use case was focused around network virtualization and software designed
+But fist, let me give you a quick history lesson.
+
+I will not turn this into lengthy lecture. All I am going to tell you is, that eBPF was introduced
+into kernel version 3.18 back in 2014, after a lot of hard work of its original creator Alexei
+Strarovoitov. Even though it original it was an abbreviation for `extended Berkley Package Filters`,
+it nowadays has little to do with `Berkley Package Filters` and should be thought of as its
+own term. The original use case was focused around network virtualization and software defined
 networking, but has since then evolved to cater other use cases as well.
 
 If you want to learn more about the origin story of eBPF, there is a whole 30-minutes documentary
@@ -43,30 +45,27 @@ Now lets get technical!
 
 <!-- overview of how eBPF is used -->
 
-eBPF programs are event driven and are run, when the kernel passes certain hook points. Those hook
-points can be predefined or, as we later hear, just arbitrary functions.
+eBPF programs are event driven and are run, when the kernel passes certain hook points. These hook
+points can be predefined or, as we later hear, just arbitrary functions within the Linux kernel.
 
 <!-- https://ebpf.io/static/b4f7d64d4d04806a1de60126926d5f3a/12151/syscall-hook.png -->
 
-The code defined for the hook is first compiled down to eBPF bytecode and then run in a special
-eBPF virtual machine, within the kernel.
-
 <!-- eBPF Virtual machine -->
 
-This Virtual Machine will compile the byte code to native machine code, when an eBPF program is
-loaded and later executes it. Earlier versions of the eBPF VM interpreted the bytecode, instead
-of compiling it down to native code. The bytecode consists of a set of instructions, which act on
-virtual eBPF registers. It is designed to map neatly to common CPU architectures, which reduces the
-complexity to compile to native code by quite a bit.
+The code defined for the hook is first compiled down to eBPF bytecode. When an the program is
+now first loaded, the Virtual Machine will compile down the byte code to native machine code.
+Earlier versions of the eBPF VM interpreted the bytecode instead. The bytecode consists of a
+set of instructions, which act on virtual registers. It is designed to map neatly to common CPU
+architectures, greatly reducing the complexity to compile to native code.
 
 The virtual machine uses 10 general-purpose 64-bit registers, numbered 0 to 9. It is important
 to note, that those registers are purely virtual and implemented in software. REG-0 holds the
 return value of a function. REG-1 to REG-5 are used to pass in arguments to functions called in the
-program. REG-6 to REG-9 do not have any other special meaning. Register 10 is used as a stack frame
-pointer, which can only be read.
+program. REG-6 to REG-9 do not have any other special meaning. There is also a special Register 10
+which is used as a read-only stack frame pointer.
 
 eBPF instructions are represented inside the kernel via the `bpf_insn` struct, defined in the BPF
-header file and looks like the following
+header file. It looks like the following
 
 ```c
 struct bpf_insn {
@@ -78,10 +77,11 @@ struct bpf_insn {
 };
 ```
 
-The `bpf_insn` structure is 8 bytes long. Sometimes one needs more space than those 8 bytes, when
-e.g. setting a register to a 64-bit value. This is where the so called `wide instruction encoding`
-comes in, which are 16 bytes long. When your eBPF program is loaded into the kernel, the byte code
-gets internally represented by a series of these `bpf_insn` structs.
+The `bpf_insn` structure is 8 bytes long. Sometimes one needs more space than those 8 bytes,
+for example when trying to set a register to a 64-bit value. This is where the so called `wide
+instruction encoding` comes into play, extending a single instruction to 16 bytes instead of 8. When
+your eBPF program is loaded into the kernel, the byte code gets internally represented by a series
+of these `bpf_insn` structs.
 
 Here we can see some examples of this op codes. The opcodes follow a special encoding scheme, that I
 sadly will not elaborate more on in this talk. If you like to learn more, checkout the Instruction
@@ -91,26 +91,18 @@ In order to store state and share data, eBPF introduced the concept of maps. Map
 structures, which can be access from both eBPF and user space. They also allow for data being shared
 across different eBPF programs. Typical use cases of maps include sharing events such as certain
 syscalls being triggered with user space, writing configuration from the user space program to eBPF
-or storing context and state from different programs to further enhance collected data.
+or storing context from different programs to further enhance collected data.
 
 Maps come in different types and shapes. There are map types for particular operations, such as
 first-in-first-out queues, LRU data storage or simple arrays. Some map types offer a per-CPU
 variant, which instructs the kernel to allocate different blocks of memory for each CPU core's
-version of that map. This comes in handy, since different eBPF programs can run at the same time.
-
-Here some quick examples of available map types:
-* (Per-CPU) HashTable
-* sockmaps/devmaps (hold info about sockets and network devices)
-* Perf and Ring Buffer
-* TailCall maps
+version of that map. This comes in handy, since different eBPF programs can in parallel.
 
 Now TailCall maps are pretty interesting. One thing to note about eBPF is, that programs do have an
-upper limit on instructions per program, which is at 1 Million for Linux 6.0 <!-- TODO verify -->.
-What TailCall maps allow you, can be compared to the `execve()` syscall. It allows you to replace
-the execution context of the current program. Even though the same stack frame is shared, you can
-not access any variables. Thus, to share state between tailcalled programs, you have to use a map.
-Another interesting fact about tail calls is, there is no coming back. Once a program tail called
-another, there is no way to continue execution of the former.
+upper instruction limit of 1 Million as per Linux 6.0. What TailCalls allow you, can be compared to the
+`execve()` syscall. When called, it is going to replace the context of the current running program
+with a different one. Even though the same stack frame is shared, you can not access any variables.
+Thus, to share state between tailcalled programs, you have to use a map.
 
 <!-- eBPF program types -->
 
@@ -124,12 +116,12 @@ on some pretty common ones.
 <!-- eBPF program types important things to consider -->
 
 First up, we have Tracepoints. A Tracepoint is a marked location in the kernel code. They are
-considered an API of the kernel and hence have some stability guarantees around them, meaning that
-they will not randomly change from one kernel version to the next. Tracepoints are by no mean
-eBPF specific. They use the so called perf subsystem for hooking, that is also used by tools such
-as `SystemTap` or `Dtrace` also allow for hooking those. You can find a list of all available
-Tracepoints in the `/sys/kernel/traceing/available_events` file. Here a quick excerpt, as with Linux
-5.15 there are more than 1400 Tracepoints defined in that list.
+considered an API of the kernel and hence have some stability guarantees around them, meaning
+that they will not randomly change from one kernel version to the next. Tracepoints are by no
+mean eBPF specific. They use the so called perf subsystem for hooking, that is also used by
+tools such as `SystemTap` or `Dtrace`. You can find a list of all available Tracepoints in
+the `/sys/kernel/traceing/available_events` file. As with Linux 5.15 there are more than 1400
+Tracepoints defined in that list. Here is a short excerpt
 
 ```
 syscalls:sys_exit_accept
@@ -154,23 +146,25 @@ will not change it signature, or simply being inlined between kernel versions. T
 your program works fine on lets say kernel 5.15, it might be completely broken on 6.4.
 
 There also exists the possibility to hook up eBPF programs to LSM hooks. This can be achieved via
-the `BPF_PROG_TYPE_LSM` program type. Overall they do not differ too much from lets say Tracepoints.
-One very important difference though is that the return value of the eBPF program controls, how the
-kernel behaves. If the program returns a value not equal to zero, the security check is seen as not
-passed, meaning the kernel will not proceed with whatever operation it was ask to complete.
+the `BPF_PROG_TYPE_LSM` program type. LSM stands for Linux Security Modules and allow you to decline
+certain actions such as syscalls to users. Overall the programs do not differ too much from lets
+say Tracepoints. One very important difference though is that the return value of the eBPF program
+controls, how the kernel behaves. If the program returns a value not equal to zero, the security
+check is seen as not passed, meaning the kernel will not proceed with whatever operation it was ask
+to complete.
 
-Last, but not least, we have the XDP program type. XDP, or Express Data Path programs, allow you
-to filter and edit network packets directly on the NIC. Here, as with the LSM program types, the
-return value of the program is used to decide what to do with a given packet. There are 5 different
-return codes, namely `XDP_ABORTED`, `XDB_DROP`, `XDB_PASS`, `XDB_TX` and `XDB_REDIRECT`. We will
-not go into details what exactly each one of those does, but `XDB_ABORTED` and `XDB_DROP` will drop
-the given packet and `XDB_PASS` will allow the packet to continue up the network stack. The program
-has full access to the complete packet and is free to modify it, which makes this program type very
-useful for e.g. reverse proxies, such as Facebook's Katran.
+Last, but not least, we have the XDP programs. XDP, or Express Data Path programs, allow you to
+filter and edit network packets directly on the NIC. Here, as with the LSM program types, the return
+value of the program is used to decide what to do with a given packet. There are 5 different return
+codes, namely `XDP_ABORTED`, `XDB_DROP`, `XDB_PASS`, `XDB_TX` and `XDB_REDIRECT`. We will not go
+into details what exactly each one of those does, but `XDB_DROP` will drop the given packet and
+`XDB_PASS` will allow the packet to continue up the network stack. The program has full access to
+the complete packet and is free to modify it, which makes this program type very useful for e.g.
+load balancers, such as Facebook's Katran.
 
 Of course there are many more program types available, but this should give you an good enough
-overview for now. One honorable and fascinating mention though. Starting with kernel version 6.11,
-it will be possible to write custom CPU schedulers using eBPF. How cool is that?
+overview for now. Here is one honorable and fascinating mention though. Starting with kernel version
+6.11, it will be possible to write custom CPU schedulers using eBPF. How cool is that?
 
 <!-- Helper Functions -->
 
@@ -206,7 +200,7 @@ struct bpf_func_proto {
 
 As you can see, the struct has a function pointer, that will point to the underlying function, as
 well as some info about the return type, as well as the argument types. Those are used by the
-verifier to ensure program safety. We will learn more about the verifier later.
+eBPF verifier to ensure program safety. We will learn more about the verifier a bit later.
 
 Here we can see it in action:
 
@@ -224,7 +218,7 @@ const struct bpf_func_proto bpf_for_each_map_elem_proto = {
 
 One interesting field on this struct is `gpl_only`. A large amount of helpers defined in the Linux
 kernel expect your program to be released under a `GPL` compatible license, or the kernel refuses to
-accept an eBPF program that uses them.
+accept your eBPF program that uses them.
 
 Lets take a few minutes to have a look at some commonly used helpers.
 
@@ -240,8 +234,9 @@ the fly to match the underlying kernel structure. I will not go into more detail
 definitely worth checking out.
 
 Next up, we have the `void *bpf_map_lookup_elem(struct bpf_map *map, const void *key)` helper. It
-allows us to retrieve a pointer to the element stored for `key` in the map. Since it returns a
-pointer, any modification to the memory region, will also update the map, so be careful.
+allows us to retrieve a pointer to the element stored for `key` in the map, or `NULL` if it does not
+exists. Since it returns a pointer, any modification to the memory region, will also update the map,
+so be careful.
 
 To add keys to the map, we can use the `long bpf_map_update_elem(struct bpf_map *map, const void
 *key, const void *value, u64 flags)` helper. You can tweak how the method should behave by passing
@@ -251,16 +246,11 @@ is an insert only. `BPF_EXISTS`, surprise surprise, will fail if the key does no
 an update. Last, but not least `BPF_ANY` doesn't care and will happily update or insert the given
 value.
 
-The last helper we will have a pquick look at is `u64 bpf_get_current_task(void)`, which will return
-a pointer to the current `task_struct`. `task_struct` represents the current task running on the
-CPU. We can get a lot of interesting data from it, such as the current Namespace, which file is
-executed, as well as all the open file descriptors.
-
 <!-- eBPF bytecode in action -->
-Lets have a quick look of this in action.
+With helpers out of the way, let's dig deeper and see the eBPF byte code in action.
 
-Todays sample is a simple XDP program, that will drop any traffic for the process with PID 32. We
-are going to compile it and inspec the resulting bytecod, but first we are going to understand what
+Today's sample is a simple XDP program, that will drop any traffic for the process with PID 32. We
+are going to compile the program and inspect the resulting bytecode, but first lets understand what
 the C code is doing.
 
 ```c
@@ -283,8 +273,8 @@ int hello(void *ctx) {
 }
 ```
 
-We kick it off, by setting the `LICENSE` constant to `GPL`. There is a good reason for that, as
-we have learned while looking at helpers, some of them only work with `GPL` licensing. You might
+We kick it off, by setting the `LICENSE` constant to `GPL`. There is a good reason for that, as we
+have learned while looking at helpers, as some of them only work with `GPL` licensing. You might
 also be wondering what exactly these `SEC` things are doing. It is actually quite easy, as it just
 instructs the compiler to put the resulting code under the section specified as the string passed to
 the macro. So the `LICENSE` constant goes into the `license` section and the byte code for `hello`
@@ -308,8 +298,8 @@ clang \
     -O2 -o hello.bpf.o -c hello.bpf.c
 ```
 
-This will leave us with a `hello.bpf.o` file. To look at the bytecode we can leverage
-`llvm-objdump` with the following command
+This will leave us with a `hello.bpf.o` file. To look at the bytecode we can call `llvm-objdump`
+with the following command
 
 ```sh
 llvm-objdump-14 --section xdp hello.bpf.o -d
@@ -344,24 +334,23 @@ Disassembly of section xdp:
 Lets go over it line by line.
 
 The first instructions is calling helper number `14`. To know what numbers translate to what helper
-functions, checkout https://elixir.bootlin.com/linux/v6.9.6/source/include/uapi/linux/bpf.h#L5801.
-It is a big macro defining all possible helper functions, but it should be fairly readable, since
-the first parameter of `FN` will be the name and the second the number we are interested in. Here
-we see that helper number `14` translate to `bpf_get_current_pid_tgid`, as we have specified in
-the source code.
+functions, checkout this huge macro table defined in the bpf header file. It is defining all
+possible helper functions, but it should be fairly readable, since the first parameter of `FN` will
+be the name and the second the number we are interested in. Here we see that helper number `14`
+translate to `bpf_get_current_pid_tgid`, as we have specified in the source code.
 
 As we have learned before, `REG-0` stores the exit values of function calls. So `REG-1` is set to
 the return value of the `bpf_get_current_pid_tgid` helper function.
 
 Next up, `REG-2` is set to a bit mask, that causes the upper `32` bit to be set. This bit mask is
-then used to clear the PID from the value we stored in `REG-1`. It might be a bit confusing, as it
-looks like, the lower `32` bits are set to high. This is caused by my architecture using big endian
-encoding of bit order, meaning the left most byte we see on each line, is in reality the first byte
-value in a number.
+then used to clear the PID from the value we stored in `REG-1`. It might be a bit confusing, as
+it looks like, the lower `32` bits are set to high. This is caused by my architecture using big
+endian encoding of bit order, meaning the left most byte we see on each line, is in reality the
+least significant byte byte in the number.
 
 Anyway, `REG-0`, is being set to `1`, which is the value of `XDP_DROP`. `REG-2` is initialized to a
 rather strange value. If we have a closer look, it becomes apparent, that this is the value `32`,
-left shifted by `32` bits in, once again, big endian notation. This value is then used to compare
+left shifted by `32` bits, once again, in big endian notation. This value is then used to compare
 against what is stored in `REG-1`. Clever, since we can now simply compare the two registers to
 each other. If they match, we will jump over the instruction setting `REG-0` to `2`, which would be
 `XDP_PASS`. Last but not least, we exit.
@@ -371,8 +360,10 @@ increasing by one and sometimes by two. If you payed close attention, you might 
 instructions in the eBPF byte code are actually 16 bytes instead of 8 bytes long. This is denoted
 by the `ll` at the end of some instructions and this is what we are seeing here.
 
-As you can see, the eBPF bytecode is somewhat accessible, but we are now going to move on to one
-very important bit of tech, that makes eBPF so powerful, the eBPF verifier.
+And that is it! So eBPF byte code is not too hard to read! Nice!
+
+Next up, we will have a look at the component responsible for ensuring our eBPF is safe. The eBPF
+verifier.
 
 <!-- eBPF verifier -->
 
@@ -405,6 +396,9 @@ simulates the execution of every instruction and observes the state change of re
 This is also where the magic comes in, as verifying every instruction is not particularly cheap.
 I am sadly not going to go into any details how exactly this works, as this is more than enough
 for a talk on its own. All I can tell you is, that the verifier has some nice tricks up its sleeves.
+You should definitely go and checkout the Linux verifier documentation, as it contains more
+fascinating details about its inner workings. There are also some very good talks about this matter
+from last eBPF summit.
 
 One thing though, this is also the reason the verifier disallows unbounded loops, as it cannot
 verify that the eBPF program will halt at some point. Another fun fact, since verifying larger
@@ -517,7 +511,7 @@ long value, that marks the underlying filesystem used for the inode. The `dentry
 hand acts as a way to translate between names and inodes. We retrieve both the dentry and inode
 from the `linux_binprm` struct, that is passed in to the tracepoint as the second argument. In a
 nutshell, this struct contains all the data required to execute a program, meaning virtual memory
-area, filename, file descriptors arguments and so on.
+area, filename, file descriptors, arguments and so on.
 
 Long story short, to know if a file was in the base layer of a container, we simply probe the magic
 field of the super block to match that of OverlayFS, plus use some pointer magic to access the
@@ -532,7 +526,7 @@ drift.
 This brings me to the end of this talk. I hope you learned a thing or two about eBPF and got a
 better understanding what all the hype is about.
 
-To recap, eBPF can be thought as JS for the kernel. It provides us with a easy and secure way to
+To recap, eBPF can be thought as what JS is to the browser for the kernel. It provides us with a easy and secure way to
 extend the kernel. Due to its flexibility, it can be used for a large range of use-cases, such as
 tracing, networking (XDP) and security (LSM). There are also more exiting things on the horizon for
 eBPF, such as `sched-ext`.

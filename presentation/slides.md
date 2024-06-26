@@ -54,6 +54,26 @@ backgroundSize: contain
 <!--
 Let me first ask you a question, who of you here has heared about ebpf? has anyone already
 consciously used it?
+
+* goal of the talk: give you better understanding why ebpf next gen tech
+* we do it by deep dive
+* checkout how it is used in cloud native landscape
+-->
+
+---
+layout: image
+image: /ebpf-comic.png
+backgroundSize: 80%
+---
+
+<div class="attribution">
+    eBPF Comic by Philipp Meier and Thomas Graf
+</div>
+
+<!--
+* think of it as JS for linux kernel
+* why big deal? before it was hard to extend
+* ebpf changed this by offering secure way
 -->
 
 ---
@@ -62,11 +82,22 @@ image: /ebpf_overview.png
 backgroundSize: contain
 ---
 
+<!--
+* used today in quite a lot of different tools/products
+* quite a few components involved
+* we are going to have a look at them
+-->
+
 ---
 layout: fact
 ---
 
 History of eBPF
+
+<!--
+* quick history lesson
+* i will not turn this into a lengthy lecture
+-->
 
 ---
 layout: section
@@ -86,6 +117,14 @@ layout: section
 
 </div>
 
+<!--
+* eBPF was introduced in linux 3.18
+* lot of hard work by alexei strarovoitov
+* originally extended berkely package filter, now its own term
+* original use case network virtualisation and software defined networking
+* now caters many use cases
+-->
+
 ---
 layout: image
 image: /ebpf_history.svg
@@ -97,6 +136,11 @@ backgroundSize: 40%
 eBPF’s Creation Story – Unlocking The Kernel
 </span>
 </div>
+
+<!--
+* to learn more, checkout the 30min doc about ebpf
+* all key people are mentioned
+-->
 
 ---
 layout: fact
@@ -110,14 +154,27 @@ image: /syscall-hook.png
 backgroundSize: contain
 ---
 
+<!--
+* ebpf programs are event driven
+* run when kernel passes hook points
+* hook points are either predefined, or arbitrary function within linux kernel
+-->
+
 ---
 layout: image
 image: /source-to-vm.svg
 backgroundSize: 70%
 ---
----
 
-# eBPF Virtual Machine
+<!--
+* code is first compiled down to byte code
+* when prog is first loaded, compiled to native code
+* earlier versions interpreted instead
+* bytecode consists of instructions acting on virtual registers
+* designed to neatly map to common cpu archs
+* virtual machine uses 10 general purpose 64 bit register
+* registers are purely virtual, implemented in software
+-->
 
 ---
 layout: full
@@ -134,6 +191,15 @@ layout: full
 
 </div>
 
+<!--
+* reg 0 holds return value
+* reg 1- 5 used to pass args to functions
+* reg 6-9 no special meaning
+* reg 10 is used as read only stack frame pointer
+
+* ebpf instructions are represented in the kernel as bpf_insn struct
+-->
+
 ---
 layout: full
 ---
@@ -141,7 +207,7 @@ layout: full
 <div class="full-center">
 <div>
 <div class="filepath">
-<a href="https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/bpf.h#L77">include/uapi/linux/bpf.h</a>
+<a href="https://elixir.bootlin.com/linux/v6.9.6/source/include/trace/events/sched.h">include/uapi/linux/bpf.h</a>
 </div>
 
 ```c
@@ -157,6 +223,12 @@ bpf_insn {
 </div>
 </div>
 
+<!--
+* instructions are 8 bytes long
+* sometimes need more space, e.g. when setting reg to 64 bit value
+* when loaded prog is internally represented by series of bpf_insns
+-->
+
 ---
 layout: full
 ---
@@ -170,6 +242,12 @@ layout: full
 | 0x5f    | and dst, src  |
 
 </div>
+
+<!--
+* quick sample of opcodes
+* follow special encoding scheme we sadly will not elaborate
+* checkout Instruction Set Architecture docs over at kernel docs
+-->
 
 ---
 layout: image
@@ -185,9 +263,17 @@ BPF Instruction Set Architecture Docs
 
 ---
 layout: image
-image: map-architecture.png
+image: /map-architecture.png
 backgroundSize: 70%
 ---
+
+<!--
+* To store state and share state, ebpf has maps
+* maps = data structures
+* can be accessed from ebpf + user space
+* use cases: share events with user space, configure ebpf from user space, storing context from different progs to further enhance collected data
+-->
+
 ---
 layout: section
 ---
@@ -223,6 +309,16 @@ layout: section
 
 </v-switch>
 
+<!--
+* maps come in different types and shapes
+* there are types for particular operations such as hash maps, LRU data stores, arrays
+* some maps come in per cpu variants
+* kernel allocates memory for maps per CPU
+* useful since programs might run in parallel
+* tail call maps special case
+* tail calls required since max instruction limit per prog = 1million
+-->
+
 ---
 layout: fact
 ---
@@ -233,11 +329,22 @@ Instruction Limit of <span class="highlighted-element"> 1 Million </span> (Linux
 
 </span>
 
+<!--
+* tail calls work like execve
+* replace context of program with a different one
+-->
+
 ---
 layout: image
-image: tailcall.png
+image: /tailcall.png
 backgroundSize: 70%
 ---
+
+<!--
+* even though stack frame is shared, vars cannot be accessed
+* to share state => use maps
+* as already mentioned, different prog types
+-->
 
 ---
 layout: full
@@ -246,7 +353,7 @@ layout: full
 <div class="full-center">
 <div>
 <div class="filepath">
-<a href="https://elixir.bootlin.com/linux/latest/source/include/uapi/linux/bpf.h#L1024">include/uapi/linux/bpf.h</a>
+<a href="https://elixir.bootlin.com/linux/v6.9.6/source/include/uapi/linux/bpf.h#L1024">include/uapi/linux/bpf.h</a>
 </div>
 
 ```c
@@ -267,11 +374,22 @@ enum bpf_prog_type {
 </div>
 </div>
 
+<!--
+* ~30 prog types
+* nobody cares about me babbling on for days
+* going to give you info on some common ones
+-->
+
 ---
 layout: section
 ---
 
 # Tracepoint
+
+<!--
+* first up tracepoints
+* marked locations within the kernel code
+-->
 
 ---
 layout: section
@@ -283,13 +401,21 @@ layout: section
 
 <v-clicks>
 
-* Not specific to eBPF
 * Considered kernel API (stable)
+* Not specific to eBPF
 * 1400+ Tracepoints defined (Linux 5.15)
 
 </v-clicks>
 
 </div>
+
+<!--
+* considered kernel API = there are some stability guarantees
+* not ebpf specific, uses perf subsystem for hooking
+* perf subsystem is also used by systemtap/dtrace
+* list of all available tracepoints: /sys/kernel/tracing/available_events
+* ~1400+ in linux 5.15
+-->
 
 ---
 layout: full
@@ -322,10 +448,80 @@ syscalls:sys_enter_socket
 </div>
 
 ---
+layout: full
+---
+
+<div class="full-center">
+<div>
+<div class="filepath">
+<a href="https://elixir.bootlin.com/linux/v6.9.6/source/include/trace/events/sched.h#L400">include/trace/events/sched.h</a>
+</div>
+
+```c
+TRACE_EVENT(sched_process_exec,
+    TP_PROTO(struct task_struct *p, pid_t old_pid,
+         struct linux_binprm *bprm),
+    TP_ARGS(p, old_pid, bprm),
+    TP_STRUCT__entry(
+        __string(	filename,	bprm->filename	)
+        __field(	pid_t,		pid		)
+        __field(	pid_t,		old_pid		)
+    ),
+    TP_fast_assign(
+        __assign_str(filename, bprm->filename);
+        __entry->pid		= p->pid;
+        __entry->old_pid	= old_pid;
+    ),
+    TP_printk("filename=%s pid=%d old_pid=%d", __get_str(filename),
+          __entry->pid, __entry->old_pid)
+);
+```
+
+</div>
+
+</div>
+
+---
+layout: full
+---
+
+<div class="full-center">
+<div>
+<div class="filepath">
+<a href="https://elixir.bootlin.com/linux/v6.8.6/source/fs/exec.c#L1814">fs/exec.c</a>
+</div>
+
+```c {11}
+static int exec_binprm(struct linux_binprm *bprm) {
+    pid_t old_pid, old_vpid;
+    int ret, depth;
+    /* Need to fetch pid before load_binary changes it */
+    old_pid = current->pid;
+    rcu_read_lock();
+    old_vpid = task_pid_nr_ns(current, task_active_pid_ns(current->parent));
+    rcu_read_unlock();
+    // ...
+    audit_bprm(bprm);
+    trace_sched_process_exec(current, old_pid, bprm);
+    ptrace_event(PTRACE_EVENT_EXEC, old_vpid);
+    proc_exec_connector(current);
+    return 0;
+}
+```
+
+</div>
+
+</div>
+
+---
 layout: section
 ---
 
 # Kprobe/Kretprobe
+
+<!--
+* unlike tracepoints, can hook any function
+-->
 
 ---
 layout: section
@@ -343,11 +539,23 @@ layout: section
 
 </div>
 
+<!--
+* kretprobe -> hook exit, kprobe -> attach to any offset within function
+* warning, not stable
+* functions might get inlined/change signature
+* might work fine on 5.15, but broken on 6.1
+-->
+
 ---
 layout: section
 ---
 
 # LSM
+
+<!--
+* BPF_PROG_TYPE_LSM prog type
+* LSM = Linux Security Modules
+-->
 
 ---
 layout: section
@@ -364,6 +572,13 @@ layout: section
 </v-clicks>
 
 </div>
+
+<!--
+* allow to decline certain actions such as syscalls to user
+* program pretty much the same as e.g. tracepoints
+* return value decides if an action is allowed or not
+* return value != 0 == decline
+-->
 
 ---
 layout: section
@@ -387,6 +602,12 @@ layout: section
 
 </div>
 
+<!--
+* allows filter/edit network packets on NIC
+* as with LSM, return value decides what happens
+* 5 different return codes
+-->
+
 ---
 layout: full
 ---
@@ -403,11 +624,27 @@ layout: full
 
 </div>
 
+<!--
+* DROP will drop packet
+* PASS will allow packet up the network stack
+* prog has full access to complete packet
+* is also free to modify it
+* very useful for e.g. load balancers facebook katran
+-->
+
 ---
 layout: fact
 ---
 
 sched-ext (Linux 6.11)
+
+<!--
+* as heard there are many prog types
+* honorable mention: starting with 6.11 it is possible to write cpu schedulers in ebpf
+* you cannot just call any kernel function from ebpf
+* would couple prog to exact kernel version/hard to guarantee stability
+* this is where helper functions come into play
+-->
 
 ---
 layout: section
@@ -420,6 +657,15 @@ layout: image
 image: /helper.png
 backgroundSize: 90%
 ---
+
+<!--
+* in a nutshell, helper allow you to retrieve data/interact with kernel
+* helpers available are coupled to program type
+* e.g. reading data directly, updating vlan info on network packet
+* prog can call helper without need for FFI => no overhead
+* are represented by bpf_func_proto struct
+-->
+
 ---
 
 ```c {|2|4|5-9}{lines:true}
@@ -436,6 +682,11 @@ struct bpf_func_proto {
 };
 ```
 
+<!--
+* pointer to underlying implementation
+* info on return type/argument types
+-->
+
 ---
 
 ```c {|3}{lines:true}
@@ -450,12 +701,26 @@ const struct bpf_func_proto bpf_for_each_map_elem_proto = {
 };
 ```
 
+<!--
+* here example
+* interesting field gpl_only
+* some helpers are only available to progs with gpl compatible license
+* lets look into helper samples
+-->
+
 ---
 layout: section
 ---
+
 ```c
 long bpf_probe_read_kernel(void *dst, u32 size, const void *unsafe_ptr)
 ```
+
+<!--
+* first up bpf_probe_read_kernel
+* read any data from unsafe_ptr into dst
+* means you can read any data you want
+-->
 
 ---
 layout: section
@@ -474,12 +739,28 @@ layout: section
 
 </div>
 
+<!--
+* one downside: internal structs can change
+* no type info at memory locations (we are in C land)
+* you need to know how to interpret memory
+*co-re leverages BTF
+* adjusts offsets on the fly
+* not going into more details
+* next up bpf_map_lookup_elem
+-->
+
 ---
 layout: section
 ---
+
 ```c
 void *bpf_map_lookup_elem(struct bpf_map *map, const void *key)
 ```
+
+<!--
+* allows to retrieve pointer to element stored for key
+-->
+
 ---
 layout: section
 ---
@@ -496,13 +777,25 @@ layout: section
 
 </div>
 
+<!--
+* if element not found NULL is returned
+* since pointer to memory in map, any modifications also modify value in map
+-->
+
 ---
 layout: section
 ---
+
 ```c
 long bpf_map_update_elem(struct bpf_map *map, const void *key,
                             const void *value, u64 flags)
 ```
+
+<!--
+* bpf_map_update_elem allows to add keys to map
+* special behavior controlled by value passed to flag
+-->
+
 ---
 layout: full
 ---
@@ -517,66 +810,21 @@ layout: full
 
 </div>
 
----
-layout: section
----
-```c
-u64 bpf_get_current_task(void)
-```
----
-layout: section
----
-
-<div class="items">
-
-* Return pointer to `task_struct`
-
-<v-clicks>
-
-* Contains data such as:
-    * Current Namespaces
-    * PID/TGID
-    * Opened Files
-
-</v-clicks>
-
-</div>
-
----
-layout: full
----
-
-
-<div class="full-center">
-<div>
-<div class="filepath">
-<a href="https://elixir.bootlin.com/linux/latest/source/include/linux/sched.h#L748">include/linux/sched.h</a>
-</div>
-
-```c {all}
-struct task_struct {
-    // ...
-    struct sched_info		sched_info;
-    struct list_head		tasks;
-    // ...
-    struct mm_struct		*mm;
-    // ...
-    unsigned int			personality;
-    // ...
-    struct files_struct		*files;
-    // ...
-    struct nsproxy			*nsproxy;
-}
-```
-
-</div>
-</div>
+<!--
+* NO_EXIST fails on existing => insert
+* EXISTS fails on non existing => update
+* ANY doesn't care
+-->
 
 ---
 layout: section
 ---
 
 # Bytecode in Action
+
+<!--
+* with helpers out of the way, let's dig deeper and see bytecode in action
+-->
 
 ---
 layout: full
@@ -604,6 +852,17 @@ int hello(void *ctx) {
 
 </div>
 
+<!--
+* today sample simple xdp prog that will drop trafific for PID 32
+* let's checkout what c code is doing
+* first set license to GPL, as heard important for helpers
+* strange SEC is used to tell compiler into what ELF sections to put resulting code (checkout ELF if you want to learn more)
+* helper call to get tgid and pid
+* threads have PIDs to, we only care about process PID, which is set as thread group id in the upper 32 bits of value (hence left shift 32)
+* if PID == 32 we drop
+* else we pass
+-->
+
 ---
 layout: full
 ---
@@ -620,6 +879,10 @@ clang \
 
 </div>
 
+<!--
+* we compile the binary like this
+-->
+
 ---
 layout: full
 ---
@@ -631,6 +894,10 @@ llvm-objdump-14 --section xdp hello.bpf.o -d
 ```
 
 </div>
+
+<!--
+* we call llvm-objdump to get bytecode for xdp section
+-->
 
 ---
 layout: full
@@ -659,10 +926,15 @@ Disassembly of section xdp:
 
 </div>
 
+<!--
+* let's go over it line by line
+* first we call helper 14
+* to figure out what helper 14 is, we need to check huge macro table in bpf header file
+-->
+
 ---
 layout: full
 ---
-
 
 <div class="full-center">
 <div>
@@ -688,6 +960,12 @@ layout: full
 
 </div>
 </div>
+
+<!--
+* it is defining all helper fucntions
+* fairly readable, first param of FN will be name, second number
+* we number 14 maps to get_current_pid_tgid
+-->
 
 ---
 layout: full
@@ -716,9 +994,17 @@ Disassembly of section xdp:
 
 </div>
 
+<!--
+* r1 is set to value of r0 (value of helper call)
+* r2 is set to bitmask with upper 32 bit high
+* bit mask is then used to clear the PID from R1 by ANDing
+* one thing looks like lover bits are set, but due to arch, big endian is used
+* big endian = left most bit = least significant bit
+-->
+
 ---
 layout: image
-image: endianess.png
+image: /endianess.png
 backgroundSize: 80%
 ---
 <div class="attribution">
@@ -752,23 +1038,55 @@ Disassembly of section xdp:
 
 </div>
 
+<!--
+* r0 is return value and set to 1, which is XDP_DROP
+* r2 is set to strange value, but upon closer inspection is simply value 32 left shifted by 32 bits (big endian once again)
+* value is then compared to R1
+* if value match, we jump over ins setting R0 to XDP_PASS
+* finally return
+* one more thing, you might have notice numbers on the left side increasing by one, sometimes by two
+* might remember wide instruction encoding
+* one instruction is 16 bytes instead of 8, hence increase by 2
+* also denoted by ll at line end
+* thats it, bytecode = easy
+* next up, look at component that makes ebpf secure
+-->
+
 ---
 layout: section
 ---
 
 # Verifier
 
+<!--
+* each time you try to load ebpf into kernel, verifier checks if prog is safe and doesn't crash the kernel
+* one of the pillars of ebpf
+* to achieve this, each ebpf prog goes through formal verification
+-->
+
 ---
 layout: image
-image: verifier.png
+image: /verifier.png
 backgroundSize: 90%
 ---
+
+<!--
+* one important thing: verifier works on bytecode, meaning it has no notion of your C/Rust/Zig source code
+* this can lead to funny hard to understand verifier errors, as compilers shuffle things around
+* e.g. verifier rejects dead code, but compiler will probably purge dead code
+* byte code != source code
+* verifier works in two stages
+-->
 
 ---
 layout: section
 ---
 
 # Stage 1
+
+<!--
+* turns the byte code into directed acyclic graph
+-->
 
 ---
 layout: section
@@ -787,11 +1105,21 @@ layout: section
 
 </div>
 
+<!--
+* perform control flow validations, such as disallowing unbounded loops
+* you heard it right, unbounded loops are not allowed
+* verifier also checks that all instructions are reachable
+-->
+
 ---
 layout: section
 ---
 
 # Stage 2
+
+<!--
+* verifier steps down all possible paths starting from first instruction
+-->
 
 ---
 layout: section
@@ -810,11 +1138,46 @@ layout: section
 
 </div>
 
+<!--
+* simulates each instruction and observes state changes
+* this is where verifier magic comes in, checking each instruction is expensive
+* sadly not going into more details, more than enough for its own talk
+* checkout verifier docs, there are also excellent videos from last ebpf summit
+-->
+
+---
+layout: image
+image: /verifier-docs.svg
+backgroundSize: 40%
+---
+
+<div style="display: flex; align-items: end; height: 100%; justify-content: center">
+<span style="color: black; font-size: 2em;">
+<a href="https://www.kernel.org/doc/html/latest/bpf/verifier.html">eBPF verifier documentation</a>
+</span>
+</div>
+
+---
+layout: fact
+---
+
+<e>Verifier is reason for program instruction limit</e>
+
+<!--
+* reason why unbounded loops are not allowed, verifier needs to ensure program halts at one point
+* same for instruction limit, as infinite instructions, would take infinit time to check
+-->
+
 ---
 layout: fact
 ---
 
 Learn to read verifier errors!
+
+<!--
+* word of advise: get familiar with verifier error messages
+* sometimes straightforward
+-->
 
 ---
 layout: full
@@ -827,6 +1190,10 @@ unreachable insn 1
 ```
 
 </div>
+
+<!--
+* sometimes quite confusing and hard to read
+-->
 
 ---
 layout: full
@@ -852,17 +1219,30 @@ R0 invalid mem access 'imm'
 
 </div>
 
+<!--
+* verifier can sometimes thing value could be NULL even though it was checked for NULL
+* in such cases, learn how to dump ebpf bytecode and read it
+-->
+
 ---
 layout: section
 ---
 
 # eBPF in the wild
 
+<!--
+* with verifier out of the way, do 10000 feet look at applications leveraging power of ebpf
+-->
+
 ---
 layout: section
 ---
 
 # Katran
+
+<!--
+* first up katran
+-->
 
 ---
 layout: section
@@ -881,11 +1261,23 @@ layout: section
 
 </div>
 
+<!--
+* central component of facebooks network infrastructure
+* achieving high performance through power of XDP, to forward packets right on network interface card, before it hits the kernels network stack
+* makes it incredibly fast
+* nice side effect: low CPU usage, meaning other apps can also run on same server
+* all thanks to ebpf
+-->
+
 ---
 layout: section
 ---
 
 # Cilium
+
+<!--
+* when speaking about ebpf and networking, cilium needs to get mentioned
+-->
 
 ---
 layout: section
@@ -906,11 +1298,28 @@ layout: section
 
 </div>
 
+<!--
+* in case you do not know it: cilium = networking/observability/security solution for kubernetes cluster
+* whole dataplane base don ebpf
+* routes traffic through xdp, replacing complicated iptable chains for routing
+* can even run in mode replacing kube-proxy
+
+* ebpf is not just for networking though
+* popular use case for tech is also in monitoring
+* big players in the industry are using it as well
+* any dynatracers here? if yes, cover your eyes and ears, because we are going to talk about the datadog agent
+-->
+
 ---
 layout: section
 ---
 
 # Datadog Agent
+
+<!--
+* source code for agent is up on github
+* poking around, you see it uses ebpf across various places
+-->
 
 ---
 layout: section
@@ -918,21 +1327,32 @@ layout: section
 
 <div class="items">
 
-* Mostly Tracing
+* Tracing network packets
 
 <v-clicks>
 
-* LSM for blocking syscalls
+* Killing processes violating policies
 
 </v-clicks>
 
 </div>
+
+<!--
+* from hooking network related kernel methods to trace network packets
+* to hooking syscalls and killing processes that violates policies
+* when speaking of security focused products in the cloud native space, you need to mention tetragon
+-->
 
 ---
 layout: section
 ---
 
 # Tetragon
+
+<!--
+* from the same folks as cilium
+* allows you to hook any kernel function/tracepoint by simply creating a policy via a custom resource object in kubernetes cluster
+-->
 
 ---
 layout: section
@@ -951,11 +1371,23 @@ layout: section
 
 </div>
 
+<!--
+* policies pack a punch, as they can kill processes in flight if they match defined policy
+* much like. datadog agent, but without paying a small fortune for a monitoring product
+* as you can see, ebpf is used across the industry
+* lets dig little deeper
+* next section we are going to look at concrete detection implementation in cast.ai kvisor
+-->
+
 ---
 layout: section
 ---
 
 # CAST.AI kvisor
+
+<!--
+
+-->
 
 ---
 layout: fact
@@ -978,11 +1410,21 @@ layout: fact
 
 Meet CAST.AI
 
+<!--
+* in case you do not know cast.ai, main product helps you getting more bang for your buck by optimising your k8s cluster to the mac, by automatically adjusting the resource requirements of your deployments and accordingly scale your node pools.
+* not too long ago ventured into the space of cloud native security, leveraging the power of ebpf
+-->
+
 ---
 layout: image
 image: /kvisor.png
 backgroundSize: 90%
 ---
+
+<!--
+* resulting in kvisor
+* not too long ago, discussions with colleagues came up with the nice idea trying to detect container drift, by leveraging the way cotnainers are implemented
+-->
 
 ---
 layout: section
@@ -990,12 +1432,19 @@ layout: section
 
 # Detecting container drift with eBPF
 
+<!--
+* approach is not completely novel, as falco is doing something similar
+-->
 
 ---
 layout: fact
 ---
 
 Kudos to Falco!
+
+<!--
+* first, lets have a quick overview of kvisors architecture
+-->
 
 ---
 layout: image
@@ -1023,17 +1472,36 @@ backgroundSize: 90%
 </template>
 </v-switch>
 
+<!--
+* the code we are going to look at lives in the kernel space, as ebpf tracepoint program
+* ebpf events are emitted to perf buffer, consumed by userspace
+* ingested into signature engine, to detect anomalies in high volume events too expensive to export
+* signature findings and some raw events are exported to the cast ai backend, where run through anomaly detection engine
+* if you want more details, feel free to approach me afterwards/consider applying to one of the open jobs
+-->
+
 ---
 layout: image
 image: /detecting-containerdrift.svg
 backgroundSize: contain
 ---
 
+<!--
+* idea is containers are implemented on top of overlayfs
+* overlayfs points to bunch of dirs called lower layers, that are read only and reference image layers
+* there is also upper layer, where all file modifications go
+* to understand when a file is in the upper layer, we need to first understand what an inode is
+-->
+
 ---
 layout: section
 ---
 
 # Inode
+
+<!--
+* by definition inode is an index node, that acts a a unique identifier for specific piece of metadata on a give fs
+-->
 
 ---
 layout: section
@@ -1060,7 +1528,7 @@ layout: full
 <div class="full-center">
 <div>
 <div class="filepath">
-<a href="https://elixir.bootlin.com/linux/latest/source/include/linux/fs.h#L632">include/linux/fs.h</a>
+<a href="https://elixir.bootlin.com/linux/v6.9.6/source/include/linux/fs.h#L632">include/linux/fs.h</a>
 </div>
 
 ```c {all}
@@ -1091,7 +1559,7 @@ layout: full
 <div class="full-center code-small-font">
 <div>
 <div class="filepath">
-<a href="https://elixir.bootlin.com/linux/latest/source/fs/overlayfs/ovl_entry.h#L162">fs/overlayfs/ovl_entry.h</a>
+<a href="https://elixir.bootlin.com/linux/v6.9.6/source/fs/overlayfs/ovl_entry.h#L162">fs/overlayfs/ovl_entry.h</a>
 </div>
 
 ```c {all|9|10}
@@ -1116,6 +1584,15 @@ struct ovl_inode {
 </div>
 </div>
 
+<!--
+* in case of overlayfs, it adds additional details to inodes it creates
+* you cannot simply extend kernel data structures (unless they pack a void pointer)
+* overlayfs goes around this by simply embedding indoe struct and returning pointer to field
+* meaning we can get the container struct by simple pointer magic
+* this is what we are doing in ebpf code
+* instead of getting the container, we simply add the size of inode to pointer, to get the next field, which is the dentry we are interested in
+-->
+
 ---
 layout: section
 ---
@@ -1131,6 +1608,12 @@ layout: section
 </v-clicks>
 
 </div>
+
+<!--
+* to detect if inode is in upper layer, we need to test if ovl_inode has __uperdentry pointing to not NULL and has OVL_E_UPPER_ALIAS flag set
+* if flag set, binary was not present in original layer, as flag is set for files that are either copied or written
+* flag also filters out symlinks
+-->
 
 ---
 layout: full
@@ -1158,6 +1641,14 @@ int tracepoint__sched__sched_process_exec(struct bpf_raw_tracepoint_args *ctx)
 
 </div>
 </div>
+
+<!--
+* in practice we are going to peek into small 7k file tracee.bpf.c
+* yeah kvisor is fork of aquas tracee
+* there exists function tracepoint__sched__sched_process_exec
+* hooks sched_process_exe tracepoint, gets called for each process is launched
+* we skip over most parts of function, if you want to know more, reach out to me
+-->
 
 ---
 layout: full
@@ -1195,6 +1686,13 @@ int tracepoint__sched__sched_process_exec(struct bpf_raw_tracepoint_args *ctx)
 </div>
 </div>
 
+<!--
+* focus on part close to the end
+* we call function called get_exe_upper_layer
+* is doing exactly what we described
+* function takes dentry + superblock
+-->
+
 ---
 layout: full
 ---
@@ -1202,7 +1700,7 @@ layout: full
 <div class="full-center">
 <div>
 <div class="filepath">
-<a href="https://elixir.bootlin.com/linux/latest/source/include/linux/fs.h#L1207">include/linux/fs.h</a>
+<a href="https://elixir.bootlin.com/linux/v6.9.6/source/include/linux/fs.h#L1207">include/linux/fs.h</a>
 </div>
 
 ```c {all|10}
@@ -1224,6 +1722,12 @@ struct super_block {
 
 </div>
 </div>
+
+<!--
+* superblock is part of inode containing meta info
+* we only care about s_magic field
+* field tells us which FS is used
+-->
 
 ---
 layout: full
@@ -1251,6 +1755,10 @@ struct dentry {
 
 </div>
 </div>
+
+<!--
+* dentry acts as a way to translate between inodes and names
+-->
 
 ---
 layout: full
@@ -1288,6 +1796,11 @@ int tracepoint__sched__sched_process_exec(struct bpf_raw_tracepoint_args *ctx)
 </div>
 </div>
 
+<!--
+* we get both structs from linux_binprm struct, that is passed to function as second argument
+* in a nutshell, struct contains all data required to execute a program, such as virtual memory area, filename, FDs, arguments and so on
+-->
+
 ---
 layout: full
 ---
@@ -1324,11 +1837,20 @@ statfunc bool get_exe_upper_layer(struct dentry *dentry, struct super_block *sb)
 </div>
 </div>
 
+<!--
+* long story short, to know if file is in upper layer, we probe magic field to match overlayfs, use pointer magic to extract __upperdentry field
+* afterwards we check if __upperdentry is non NULL and has OVL_E_UPPER_ALIAS flag set
+-->
+
 ---
 layout: fact
 ---
 
 And that is about it!
+
+<!--
+* congrats, we just implemented basic container drift detection
+-->
 
 ---
 layout: section
@@ -1336,7 +1858,7 @@ layout: section
 
 <div class="items">
 
-* eBPF is like JS for the kernel
+* eBPF is to the kernel what JS is to the browser
 
 <v-clicks>
 
@@ -1351,27 +1873,47 @@ layout: section
 
 </div>
 
+<!--
+* recap
+* what js is to the browser to the kernel
+* due to flexibility can be used for large array of use-cases: such as tracing, networking, security
+* more things to come: such as sched-ext
+* if you interested in ebpf, check out source code for tool such as tracee
+* also consider joining the ebpf channel on the cilium slack server
+* quite a lot of interesting discussions
+-->
+
 ---
 layout: fact
 ---
 
 Check out <a href="https://patrickpichler.dev">patrickpichler.dev</a>
 
----
-layout: image
-image: blog.png
-backgroundSize: contain
----
+<!--
+* also check out my personal blog
+* still quite empty
+* BUT THE TIME IS NOW
+-->
 
 ---
 layout: image
-image: blog-meme.png
+image: /blog.png
+backgroundSize: contain
+---
+
+<!--
+* Also if you like to talk more about ebpf or any other tech topic, feel free to reach out to me
+-->
+
+---
+layout: image
+image: /blog-meme.png
 backgroundSize: 50%
 ---
 
 ---
 layout: image
-image: cast-hiring.svg
+image: /cast-hiring.svg
 backgroundSize: 40%
 ---
 
@@ -1380,6 +1922,11 @@ backgroundSize: 40%
 Senior Software Engineer - Security Product Team
 </span>
 </div>
+
+<!--
+* in case you are interested in ebpf and kubernetes security + want to do it for a living, checkout cast.ai career page
+* hiring for the security team, which i am also part of
+-->
 
 ---
 layout: fact

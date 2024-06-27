@@ -62,6 +62,12 @@ consciously used it?
 
 ---
 layout: image
+image: /ebpf_so_hot_meme.png
+backgroundSize: contains
+---
+
+---
+layout: image
 image: /ebpf-comic.png
 backgroundSize: 80%
 ---
@@ -1252,6 +1258,12 @@ Disassembly of section tracepoint/sched_process_fork:
 -->
 
 ---
+layout: image
+image: /ebpf_bytecode_meme.png
+backgroundSize: contain
+---
+
+---
 layout: section
 ---
 
@@ -1375,10 +1387,17 @@ layout: fact
 
 Learn to read verifier errors!
 
+
 <!--
 * word of advise: get familiar with verifier error messages
 * sometimes straightforward
 -->
+
+---
+layout: image
+image: /verifier-meme.png
+backgroundSize: contain
+---
 
 ---
 layout: full

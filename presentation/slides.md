@@ -1817,6 +1817,12 @@ layout: section
 -->
 
 ---
+layout: fact
+---
+
+Kudos to Aqua Tracee!
+
+---
 layout: full
 ---
 
